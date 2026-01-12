@@ -174,14 +174,18 @@ def custom_login(request):
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
+
         user = authenticate(request, username=username, password=password)
 
         if user:
             login(request, user)
-            if user.is_staff:
+
+            # Admin or staff
+            if user.is_staff or user.is_superuser:
                 return redirect('/dashboard/')
             else:
-                return redirect('/')
+                return redirect('/book_room/')
         else:
-            return render(request, 'login.html', {'error': 'Invalid login'})
+            return render(request, 'login.html', {'error': 'Invalid username or password'})
+
     return render(request, 'login.html')

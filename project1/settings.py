@@ -125,6 +125,6 @@ STATICFILES_DIRS = [BASE_DIR / 'core' / 'static']
 #LOGIN_REDIRECT_URL = '/'  # After login
 #LOGOUT_REDIRECT_URL = '/'  # After logout
 
-LOGIN_REDIRECT_URL = '/'
+#LOGIN_REDIRECT_URL = '/'
 
-LOGOUT_REDIRECT_URL = '/'
+#LOGOUT_REDIRECT_URL = '/'
