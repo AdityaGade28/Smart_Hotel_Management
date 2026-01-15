@@ -128,3 +128,13 @@ STATICFILES_DIRS = [BASE_DIR / 'core' / 'static']
 #LOGIN_REDIRECT_URL = '/'
 
 #LOGOUT_REDIRECT_URL = '/'
+
+# LOGIN_URL = 'login'
+# # LOGIN_REDIRECT_URL = 'dashboard'
+# # LOGOUT_REDIRECT_URL = 'login'
+# LOGOUT_REDIRECT_URL = '/'
+# LOGIN_URL = '/login/'
+
+LOGOUT_REDIRECT_URL = '/'
+LOGIN_REDIRECT_URL = '/profile/'
+LOGIN_URL = '/login/'

@@ -1,5 +1,5 @@
 from django.urls import path
-from django.contrib.auth import views as auth_views
+from django.contrib.auth.views import LogoutView
 from . import views
 
 urlpatterns = [
@@ -7,17 +7,23 @@ urlpatterns = [
     path('', views.home, name='home'),
     path('facilities/', views.facilities, name='facilities'),
     path('contact/', views.contact, name='contact'),
+    path('map/', views.map_view, name='map'),
+
+    # Booking
     path('book_room/', views.book_room, name='book_room'),
 
-    # User login
+    # User Auth
     path('login/', views.custom_login, name='login'),
-path('logout/', auth_views.LogoutView.as_view(next_page='/'), name='logout'),
-path('admin_login/', views.custom_login, name='admin_login'),
+    path('register/', views.register, name='register'),
+    path('profile/', views.profile, name='profile'),
 
-    # Admin login
-    path('admin_login/', auth_views.LoginView.as_view(template_name='admin_login.html'), name='admin_login'),
+    # Admin Auth
+    path('admin-login/', views.admin_login, name='admin_login'),
 
-    # Admin dashboard
+    # Logout → Home
+    path('logout/', LogoutView.as_view(next_page='home'), name='logout'),
+
+    # Admin Dashboard
     path('dashboard/', views.dashboard, name='dashboard'),
     path('bookings/', views.bookings, name='bookings'),
     path('payments/', views.payments, name='payments'),

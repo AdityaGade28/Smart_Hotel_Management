@@ -1,52 +1,132 @@
-{% load static %}
 <!DOCTYPE html>
 <html>
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Facilities - Smart Hotel</title>
+<title>Facilities</title>
 <style>
-body{margin:0;font-family:Poppins;background:#020617;color:white}
-nav{
-  position:sticky;top:0;z-index:999;background:rgba(0,0,0,0.65);
-  backdrop-filter:blur(10px);padding:15px 30px;display:flex;justify-content:space-between;align-items:center;
+*{box-sizing:border-box}
+body{
+    margin:0;
+    font-family:Segoe UI, sans-serif;
+    background:linear-gradient(120deg,#f0f4ff,#e8f9f1);
 }
-nav h2{margin:0;color:#38bdf8;font-size:26px}
-nav a{color:white;margin:0 12px;text-decoration:none;font-weight:500}
-nav a:hover{color:#38bdf8}
-.section{padding:50px}
-.section h2{text-align:center;color:#38bdf8;margin-bottom:30px;font-size:38px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:25px}
-.card{background:rgba(255,255,255,.08);padding:30px;border-radius:20px;box-shadow:0 15px 30px rgba(0,0,0,.5);transition:.3s}
-.card:hover{transform:translateY(-10px)}
+.header{
+    background:linear-gradient(90deg,#1e3c72,#2a5298);
+    color:white;
+    padding:25px;
+    text-align:center;
+    font-size:32px;
+    font-weight:bold;
+    letter-spacing:1px;
+}
+.container{
+    display:flex;
+    min-height:100vh;
+}
+.menu{
+    width:30%;
+    background:white;
+    box-shadow:2px 0 15px rgba(0,0,0,0.15);
+}
+.menu button{
+    width:100%;
+    padding:18px;
+    border:none;
+    background:white;
+    border-bottom:1px solid #eee;
+    font-size:18px;
+    cursor:pointer;
+    transition:0.3s;
+}
+.menu button:hover{
+    background:#1e3c72;
+    color:white;
+    transform:scale(1.02);
+}
+.content{
+    width:70%;
+    padding:40px;
+}
+.card{
+    background:white;
+    border-radius:16px;
+    box-shadow:0 15px 30px rgba(0,0,0,0.2);
+    overflow:hidden;
+    animation:fade 0.6s;
+}
+.card img{
+    width:100%;
+    height:320px;
+    object-fit:cover;
+}
+.card-body{
+    padding:30px;
+}
+.card-body h2{
+    color:#1e3c72;
+    margin-top:0;
+}
+.card-body p{
+    font-size:18px;
+    line-height:1.7;
+}
+@keyframes fade{
+    from{opacity:0; transform:translateY(30px);}
+    to{opacity:1; transform:translateY(0);}
+}
+@media(max-width:900px){
+    .container{flex-direction:column}
+    .menu,.content{width:100%}
+}
 </style>
 </head>
 <body>
 
-<nav>
-<h2>Smart Hotel</h2>
-<div>
-<a href="{% url 'home' %}">Home</a>
-<a href="{% url 'facilities' %}">Facilities</a>
-<a href="{% url 'contact' %}">Contact</a>
-<a href="{% url 'book_room' %}">Book</a>
-<a href="{% url 'login' %}">User</a>
-<a href="{% url 'admin_login' %}">Admin</a>
-</div>
-</nav>
+<div class="header">Hotel Facilities</div>
 
-<section class="section">
-<h2>Our Facilities</h2>
-<div class="grid">
-<div class="card">Swimming Pool</div>
-<div class="card">Gym & Spa</div>
-<div class="card">Restaurant</div>
-<div class="card">Conference Hall</div>
-<div class="card">Free High-Speed WiFi</div>
-<div class="card">Airport Pickup</div>
-<div class="card">Parking Facility</div>
-<div class="card">Laundry Service</div>
+<div class="container">
+    <div class="menu">
+        <button onclick="showData('pool')">Swimming Pool</button>
+        <button onclick="showData('gym')">Gym & Spa</button>
+        <button onclick="showData('restaurant')">Restaurant</button>
+        <button onclick="showData('conference')">Conference Hall</button>
+        <button onclick="showData('wifi')">Free High-Speed WiFi</button>
+        <button onclick="showData('pickup')">Airport Pickup</button>
+        <button onclick="showData('parking')">Parking Facility</button>
+        <button onclick="showData('laundry')">Laundry Service</button>
+    </div>
+
+    <div class="content">
+        <div class="card" id="display">
+            <img src="/static/images/pool.jpg">
+            <div class="card-body">
+                <h2>Welcome</h2>
+                <p>Select a facility from the left to see full details.</p>
+            </div>
+        </div>
+    </div>
 </div>
-</section>
+
+<script>
+function showData(type){
+let data={
+pool:{img:"/static/images/pool.jpg",title:"Swimming Pool",text:"Luxury temperature-controlled swimming pool open 6AM–10PM with kids zone and poolside service."},
+gym:{img:"/static/images/gym.jpg",title:"Gym & Spa",text:"Modern gym, yoga sessions, sauna, steam bath and professional spa services."},
+restaurant:{img:"/static/images/restaurant.jpg",title:"Restaurant",text:"24/7 multi-cuisine restaurant serving Indian, Chinese, Continental and Italian food."},
+conference:{img:"/static/images/conference.jpg",title:"Conference Hall",text:"Fully air-conditioned hall for 200 people with projector and sound system."},
+wifi:{img:"/static/images/wifi.jpg",title:"Free High-Speed WiFi",text:"Unlimited high-speed internet across rooms and public areas."},
+pickup:{img:"/static/images/pickup.jpg",title:"Airport Pickup",text:"24x7 airport pickup and drop with luxury cars."},
+parking:{img:"/static/images/parking.jpg",title:"Parking Facility",text:"Secure CCTV parking with valet and EV charging."},
+laundry:{img:"/static/images/laundry.jpg",title:"Laundry Service",text:"Same-day laundry and dry-cleaning service."}
+};
+let d=data[type];
+document.getElementById("display").innerHTML=
+`<img src="${d.img}">
+ <div class="card-body">
+   <h2>${d.title}</h2>
+   <p>${d.text}</p>
+ </div>`;
+}
+</script>
 
 </body>
 </html>

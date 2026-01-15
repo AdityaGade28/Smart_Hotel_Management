@@ -1,0 +1,193 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>User Profile - Smart Hotel</title>
+<style>
+body{
+  font-family:Poppins,Arial;
+  background:linear-gradient(135deg,#e0f2fe,#f8fafc);
+  color:#020617;
+  padding:20px;
+}
+.container{
+  max-width:1100px;
+  margin:auto;
+}
+
+/* Header */
+.header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-wrap:wrap;
+  margin-bottom:20px;
+}
+.header h2{color:#2563eb;margin:0}
+.header div a, .header div button{
+  text-decoration:none;
+  margin-left:10px;
+  padding:8px 18px;
+  border-radius:20px;
+  font-weight:500;
+  cursor:pointer;
+}
+.btn-book{background:#22c55e;color:white}
+.btn-logout{background:#ef4444;color:white;border:none}
+
+/* Cards */
+.card{
+  background:white;
+  padding:20px;
+  margin:20px 0;
+  border-radius:20px;
+  box-shadow:0 15px 30px rgba(0,0,0,.1);
+}
+h3{color:#1d4ed8;margin-bottom:10px}
+
+/* Tables */
+table{
+  width:100%;
+  border-collapse:collapse;
+}
+th,td{
+  padding:12px;
+  border-bottom:1px solid #e5e7eb;
+  text-align:center;
+}
+th{
+  background:#f1f5f9;
+  font-weight:600;
+}
+.status-pending{color:#f59e0b;font-weight:600}
+.status-confirmed{color:#16a34a;font-weight:600}
+
+/* QR Images */
+img.qr{
+  width:90px;
+  height:90px;
+  margin:4px;
+  border-radius:10px;
+  box-shadow:0 4px 10px rgba(0,0,0,.15);
+}
+
+/* Toast Notifications */
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #22c55e;
+  color: white;
+  padding: 14px 24px;
+  border-radius: 12px;
+  box-shadow:0 5px 15px rgba(0,0,0,.2);
+  display: none;
+  z-index: 1000;
+  font-weight: 500;
+}
+.toast.error { background: #ef4444; }
+
+/* Responsive */
+@media(max-width:600px){
+  .header{flex-direction:column;align-items:flex-start}
+  .header div{margin-top:10px}
+  img.qr{width:70px;height:70px}
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<!-- Header -->
+<div class="header">
+  <h2>Welcome, {{ request.user.username }}</h2>
+  <div>
+    <a href="{% url 'book_room' %}" class="btn-book">Book Room</a>
+    <form action="{% url 'logout' %}" method="post" style="display:inline;">
+      {% csrf_token %}
+      <button class="btn-logout" type="submit">Logout</button>
+    </form>
+  </div>
+</div>
+
+<!-- Toast Notification -->
+<div id="toast" class="toast"></div>
+
+<!-- Bookings -->
+<div class="card">
+<h3>Your Bookings</h3>
+<table>
+<tr>
+  <th>Room</th><th>Check-in</th><th>Check-out</th><th>Status</th>
+</tr>
+{% for b in bookings %}
+<tr>
+  <td>{{ b.room_type }}</td>
+  <td>{{ b.check_in }}</td>
+  <td>{{ b.check_out }}</td>
+  <td class="{% if b.status == 'Confirmed' %}status-confirmed{% else %}status-pending{% endif %}">
+      {{ b.status }}
+  </td>
+</tr>
+{% empty %}
+<tr><td colspan="4">No bookings yet</td></tr>
+{% endfor %}
+</table>
+</div>
+
+<!-- Payments -->
+<div class="card">
+<h3>Your Payments</h3>
+<table>
+<tr>
+  <th>Amount</th><th>Status</th><th>QR Codes</th>
+</tr>
+{% for booking in bookings %}
+{% if booking.payment %}
+<tr>
+  <td>₹{{ booking.payment.total_amount }}</td>
+  <td>{{ booking.payment.status }}</td>
+  <td>
+    <img class="qr" src="{% static 'images/qr.jpeg' %}" alt="QR Code">
+    <img class="qr" src="{% static 'images/qr1.jpeg' %}" alt="QR Code">
+  </td>
+</tr>
+{% endif %}
+{% empty %}
+<tr><td colspan="3">No payments yet</td></tr>
+{% endfor %}
+</table>
+</div>
+
+</div>
+
+<script>
+// Toast notification
+function showToast(message, isError=false){
+  const toast = document.getElementById('toast');
+  toast.textContent = message;
+  toast.className = 'toast';
+  if(isError) toast.classList.add('error');
+  toast.style.display = 'block';
+  setTimeout(()=>{ toast.style.display='none'; }, 4000);
+}
+
+// Django messages
+{% if messages %}
+  {% for message in messages %}
+    showToast("{{ message|escapejs }}", {% if 'error' in message.tags %}true{% else %}false{% endif %});
+  {% endfor %}
+{% endif %}
+
+// Placeholder for SMS trigger when admin confirms a booking
+{% for b in bookings %}
+{% if b.status == 'Confirmed' %}
+  console.log("SMS should be sent to {{ b.mobile }}: Your booking for {{ b.room_type }} is confirmed!");
+{% endif %}
+{% endfor %}
+</script>
+
+</body>
+</html>
