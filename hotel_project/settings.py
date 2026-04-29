@@ -112,6 +112,9 @@ LOGOUT_REDIRECT_URL = '/users/login/'
 CRISPY_ALLOWED_TEMPLATE_PACKS = 'bootstrap5'
 CRISPY_TEMPLATE_PACK = 'bootstrap5'
 
+# Session settings
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
 # Email settings
 EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
 EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')
