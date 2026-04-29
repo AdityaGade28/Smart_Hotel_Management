@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}Payment History — SmartHotel{% endblock %}
+{% block content %}
+<div class="container">
+    <h1 class="h4 fw-bold mb-4">Payment History</h1>
+    <div class="card shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr><th>Transaction ID</th><th>Booking</th><th>Hotel</th><th>Amount</th><th>Method</th><th>Status</th><th>Date</th></tr>
+                </thead>
+                <tbody>
+                    {% for payment in payments %}
+                    <tr>
+                        <td class="fw-semibold">{{ payment.short_txn_id }}</td>
+                        <td>{{ payment.booking.short_booking_id }}</td>
+                        <td>{{ payment.booking.room.hotel.name }}</td>
+                        <td>₹{{ payment.amount }}</td>
+                        <td>{{ payment.get_method_display }}</td>
+                        <td>
+                            <span class="badge {% if payment.status == 'completed' %}bg-success{% elif payment.status == 'failed' %}bg-danger{% elif payment.status == 'refunded' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                                {{ payment.get_status_display }}
+                            </span>
+                        </td>
+                        <td>{{ payment.created_at|date:'d M Y' }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="7" class="text-center text-muted py-5">No payments yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}Manage Users — Admin{% endblock %}
+{% block content %}
+<div class="container">
+    <h1 class="h4 fw-bold mb-4">Manage Users</h1>
+    <div class="card shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr><th>Username</th><th>Email</th><th>Role</th><th>Phone</th><th>Joined</th><th>Status</th><th>Action</th></tr>
+                </thead>
+                <tbody>
+                    {% for u in users %}
+                    <tr>
+                        <td class="fw-semibold">{{ u.username }}</td>
+                        <td>{{ u.email }}</td>
+                        <td><span class="badge bg-secondary">{{ u.get_role_display }}</span></td>
+                        <td>{{ u.phone|default:'—' }}</td>
+                        <td>{{ u.date_joined|date:'d M Y' }}</td>
+                        <td>{% if u.is_active %}<span class="badge bg-success">Active</span>{% else %}<span class="badge bg-danger">Inactive</span>{% endif %}</td>
+                        <td>
+                            {% if u != request.user %}
+                            <form method="post" action="{% url 'users:toggle_user_status' pk=u.pk %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm {% if u.is_active %}btn-outline-danger{% else %}btn-outline-success{% endif %}">
+                                    {% if u.is_active %}Deactivate{% else %}Activate{% endif %}
+                                </button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

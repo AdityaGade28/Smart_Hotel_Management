@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block title %}My Service Requests{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h4 fw-bold">My Service Requests</h1>
+        <a href="{% url 'food_services:request_service' booking_pk=booking.pk %}" class="btn btn-outline-primary btn-sm">New Request</a>
+    </div>
+    {% for svc in services %}
+    <div class="card mb-3 shadow-sm">
+        <div class="card-body d-flex justify-content-between align-items-center">
+            <div>
+                <span class="fw-semibold">{{ svc.get_service_type_display }}</span>
+                {% if svc.notes %}<p class="text-muted small mb-0">{{ svc.notes }}</p>{% endif %}
+                <small class="text-muted">{{ svc.requested_at|date:'d M Y H:i' }}</small>
+            </div>
+            <span class="badge {% if svc.status == 'completed' %}bg-success{% elif svc.status == 'in_progress' %}bg-warning text-dark{% elif svc.status == 'cancelled' %}bg-danger{% else %}bg-secondary{% endif %}">
+                {{ svc.get_status_display }}
+            </span>
+        </div>
+    </div>
+    {% empty %}
+    <div class="alert alert-info">No service requests yet. <a href="{% url 'food_services:request_service' booking_pk=booking.pk %}">Request one!</a></div>
+    {% endfor %}
+</div>
+{% endblock %}

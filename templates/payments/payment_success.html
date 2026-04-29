@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}Payment Successful!{% endblock %}
+{% block content %}
+<div class="container" style="max-width:500px;">
+    <div class="card shadow-sm text-center p-5 mt-3">
+        <i class="bi bi-check-circle-fill text-success" style="font-size:4rem;"></i>
+        <h3 class="fw-bold mt-3 text-success">Payment Successful!</h3>
+        <p class="text-muted">Your booking is confirmed. Have a wonderful stay!</p>
+        <dl class="row small text-start mt-3">
+            <dt class="col-5">Transaction ID</dt><dd class="col-7 fw-semibold">{{ payment.short_txn_id }}</dd>
+            <dt class="col-5">Amount Paid</dt><dd class="col-7 fw-bold text-primary">₹{{ payment.amount }}</dd>
+            <dt class="col-5">Method</dt><dd class="col-7">{{ payment.get_method_display }}</dd>
+            <dt class="col-5">Booking ID</dt><dd class="col-7">{{ payment.booking.short_booking_id }}</dd>
+            <dt class="col-5">Hotel</dt><dd class="col-7">{{ payment.booking.room.hotel.name }}</dd>
+            <dt class="col-5">Check-in</dt><dd class="col-7">{{ payment.booking.check_in }}</dd>
+        </dl>
+        <div class="d-flex gap-2 justify-content-center mt-3">
+            <a href="{% url 'bookings:booking_detail' pk=payment.booking.pk %}" class="btn btn-primary">View Booking</a>
+            <a href="{% url 'hotels:home' %}" class="btn btn-outline-secondary">Back to Home</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

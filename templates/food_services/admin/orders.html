@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}Food Orders — Admin{% endblock %}
+{% block content %}
+<div class="container">
+    <h1 class="h4 fw-bold mb-4">Food Orders</h1>
+    <div class="card shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr><th>#</th><th>Guest</th><th>Booking</th><th>Items</th><th>Total</th><th>Status</th><th>Action</th></tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                    <tr>
+                        <td>{{ order.pk }}</td>
+                        <td>{{ order.booking.customer.username }}</td>
+                        <td>{{ order.booking.short_booking_id }}</td>
+                        <td>
+                            {% for oi in order.orderitem_set.all %}
+                            <span class="small">{{ oi.quantity }}× {{ oi.menu_item.name }}</span><br>
+                            {% endfor %}
+                        </td>
+                        <td>₹{{ order.total }}</td>
+                        <td><span class="badge {% if order.status == 'delivered' %}bg-success{% elif order.status == 'preparing' %}bg-warning text-dark{% elif order.status == 'cancelled' %}bg-danger{% else %}bg-secondary{% endif %}">{{ order.get_status_display }}</span></td>
+                        <td>
+                            <form method="post" action="{% url 'food_services:admin_update_order' pk=order.pk %}" class="d-flex gap-1">
+                                {% csrf_token %}
+                                <select name="status" class="form-select form-select-sm">
+                                    {% for val, label in order.STATUS_CHOICES %}
+                                    <option value="{{ val }}" {% if order.status == val %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                                <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="7" class="text-center text-muted py-4">No orders yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

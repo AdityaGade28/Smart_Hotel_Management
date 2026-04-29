@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% block title %}Booking {{ booking.short_booking_id }}{% endblock %}
+{% block content %}
+<div class="container" style="max-width:700px;">
+    <div class="d-flex align-items-center mb-4">
+        <a href="{% url 'bookings:booking_list' %}" class="btn btn-outline-secondary btn-sm me-3"><i class="bi bi-arrow-left"></i></a>
+        <h1 class="h4 fw-bold mb-0">Booking Details</h1>
+    </div>
+    <div class="card shadow-sm mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span class="fw-bold">ID: {{ booking.short_booking_id }}</span>
+            <span class="badge {% if booking.status == 'confirmed' %}bg-success{% elif booking.status == 'pending' %}bg-warning text-dark{% elif booking.status == 'cancelled' %}bg-danger{% else %}bg-secondary{% endif %} fs-6">
+                {{ booking.get_status_display }}
+            </span>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-sm-6">
+                    <label class="text-muted small">Hotel</label>
+                    <p class="fw-semibold mb-0">{{ booking.room.hotel.name }}</p>
+                </div>
+                <div class="col-sm-6">
+                    <label class="text-muted small">Room</label>
+                    <p class="fw-semibold mb-0">{{ booking.room.room_number }} — {{ booking.room.get_room_type_display }}</p>
+                </div>
+                <div class="col-sm-6">
+                    <label class="text-muted small">Check-in</label>
+                    <p class="fw-semibold mb-0">{{ booking.check_in }}</p>
+                </div>
+                <div class="col-sm-6">
+                    <label class="text-muted small">Check-out</label>
+                    <p class="fw-semibold mb-0">{{ booking.check_out }}</p>
+                </div>
+                <div class="col-sm-6">
+                    <label class="text-muted small">Nights</label>
+                    <p class="fw-semibold mb-0">{{ booking.get_num_nights }}</p>
+                </div>
+                <div class="col-sm-6">
+                    <label class="text-muted small">Guests</label>
+                    <p class="fw-semibold mb-0">{{ booking.num_guests }}</p>
+                </div>
+                {% if booking.coupon_code %}
+                <div class="col-sm-6">
+                    <label class="text-muted small">Coupon</label>
+                    <p class="fw-semibold mb-0">{{ booking.coupon_code }} (–₹{{ booking.discount_amount }})</p>
+                </div>
+                {% endif %}
+                <div class="col-sm-6">
+                    <label class="text-muted small">Total Price</label>
+                    <p class="fw-bold text-primary mb-0 fs-5">₹{{ booking.total_price }}</p>
+                </div>
+                {% if booking.special_requests %}
+                <div class="col-12">
+                    <label class="text-muted small">Special Requests</label>
+                    <p class="mb-0">{{ booking.special_requests }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Status -->
+    {% if booking.payment %}
+    <div class="card shadow-sm mb-3">
+        <div class="card-header fw-semibold">Payment</div>
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="text-muted small">Transaction ID: </span>
+                    <span class="fw-semibold">{{ booking.payment.short_txn_id }}</span> &nbsp;|&nbsp;
+                    <span class="text-muted small">Method: </span>
+                    <span>{{ booking.payment.get_method_display }}</span>
+                </div>
+                <span class="badge {% if booking.payment.status == 'completed' %}bg-success{% elif booking.payment.status == 'failed' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                    {{ booking.payment.get_status_display }}
+                </span>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    {% if booking.status == 'pending' %}
+    <div class="alert alert-warning">Payment pending. <a href="{% url 'payments:checkout' booking_pk=booking.pk %}">Pay now →</a></div>
+    {% endif %}
+    {% endif %}
+
+    <!-- Actions -->
+    <div class="d-flex gap-2 flex-wrap">
+        {% if booking.status in 'pending confirmed' %}
+        <a href="{% url 'bookings:cancel_booking' pk=booking.pk %}" class="btn btn-outline-danger">Cancel Booking</a>
+        {% endif %}
+        {% if booking.status == 'confirmed' %}
+        <a href="{% url 'food_services:menu' booking_pk=booking.pk %}" class="btn btn-outline-primary">Order Food</a>
+        <a href="{% url 'food_services:request_service' booking_pk=booking.pk %}" class="btn btn-outline-secondary">Request Service</a>
+        {% endif %}
+        {% if user.is_admin_user %}
+        <form method="post" action="{% url 'bookings:admin_update_status' pk=booking.pk %}" class="d-flex gap-2">
+            {% csrf_token %}
+            <select name="status" class="form-select form-select-sm">
+                <option value="pending" {% if booking.status == 'pending' %}selected{% endif %}>Pending</option>
+                <option value="confirmed" {% if booking.status == 'confirmed' %}selected{% endif %}>Confirmed</option>
+                <option value="cancelled" {% if booking.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                <option value="completed" {% if booking.status == 'completed' %}selected{% endif %}>Completed</option>
+            </select>
+            <button type="submit" class="btn btn-primary btn-sm">Update Status</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

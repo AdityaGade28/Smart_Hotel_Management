@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}My Orders — SmartHotel{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h4 fw-bold">My Food Orders</h1>
+        <a href="{% url 'food_services:menu' booking_pk=booking.pk %}" class="btn btn-outline-primary btn-sm">Order More</a>
+    </div>
+    {% for order in orders %}
+    <div class="card mb-3 shadow-sm">
+        <div class="card-header d-flex justify-content-between">
+            <span class="fw-semibold">Order #{{ order.pk }}</span>
+            <span class="badge {% if order.status == 'delivered' %}bg-success{% elif order.status == 'preparing' %}bg-warning text-dark{% elif order.status == 'cancelled' %}bg-danger{% else %}bg-secondary{% endif %}">
+                {{ order.get_status_display }}
+            </span>
+        </div>
+        <div class="card-body">
+            <ul class="list-unstyled mb-2">
+                {% for oi in order.orderitem_set.all %}
+                <li class="small">{{ oi.quantity }}× {{ oi.menu_item.name }} — ₹{{ oi.subtotal }}</li>
+                {% endfor %}
+            </ul>
+            <p class="fw-bold mb-0">Total: ₹{{ order.total }}</p>
+            <p class="text-muted small mb-0">Placed: {{ order.created_at|date:'d M Y H:i' }}</p>
+        </div>
+    </div>
+    {% empty %}
+    <div class="alert alert-info">No orders yet. <a href="{% url 'food_services:menu' booking_pk=booking.pk %}">View menu!</a></div>
+    {% endfor %}
+</div>
+{% endblock %}

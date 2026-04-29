@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}Payment Failed{% endblock %}
+{% block content %}
+<div class="container" style="max-width:480px;">
+    <div class="card shadow-sm text-center p-5 mt-3">
+        <i class="bi bi-x-circle-fill text-danger" style="font-size:4rem;"></i>
+        <h3 class="fw-bold mt-3 text-danger">Payment Failed</h3>
+        <p class="text-muted">Your payment could not be processed. Please try again.</p>
+        <div class="d-flex gap-2 justify-content-center mt-3">
+            <a href="{% url 'payments:checkout' booking_pk=payment.booking.pk %}" class="btn btn-primary">Retry Payment</a>
+            <a href="{% url 'bookings:booking_list' %}" class="btn btn-outline-secondary">My Bookings</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

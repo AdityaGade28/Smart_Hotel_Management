@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+{% block title %}My Dashboard — SmartHotel{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h4 fw-bold mb-0">My Dashboard</h1>
+            <p class="text-muted small mb-0">
+                <i class="bi bi-circle-fill text-success me-1" style="font-size:8px;"></i>
+                Live — auto-refreshes every 20s &nbsp;|&nbsp; Updated: <span id="lastUpdate" class="fw-semibold">—</span>
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-primary btn-sm" onclick="fetchCustomerStats()">
+                <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+            </button>
+            <a href="{% url 'hotels:hotel_list' %}" class="btn btn-primary btn-sm">
+                <i class="bi bi-search me-1"></i>Browse Hotels
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Row — live updated -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card text-center border-0 shadow-sm">
+                <div class="card-body">
+                    <i class="bi bi-calendar-check text-primary fs-3"></i>
+                    <h3 class="fw-bold mt-1" id="stat-total">{{ total_bookings }}</h3>
+                    <p class="text-muted mb-0 small">Total Bookings</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-0 shadow-sm">
+                <div class="card-body">
+                    <i class="bi bi-check-circle text-success fs-3"></i>
+                    <h3 class="fw-bold mt-1" id="stat-active">{{ active_bookings }}</h3>
+                    <p class="text-muted mb-0 small">Active / Confirmed</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-0 shadow-sm">
+                <div class="card-body">
+                    <i class="bi bi-hourglass-split text-warning fs-3"></i>
+                    <h3 class="fw-bold mt-1" id="stat-pending">—</h3>
+                    <p class="text-muted mb-0 small">Pending Payment</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-0 shadow-sm">
+                <div class="card-body">
+                    <i class="bi bi-x-circle text-danger fs-3"></i>
+                    <h3 class="fw-bold mt-1" id="stat-cancelled">{{ cancelled_bookings }}</h3>
+                    <p class="text-muted mb-0 small">Cancelled</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Recent Bookings — live -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span class="fw-semibold"><i class="bi bi-circle-fill text-success me-1" style="font-size:7px;"></i>My Bookings <span class="text-muted small fw-normal">(live)</span></span>
+                    <a href="{% url 'bookings:booking_list' %}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr><th>ID</th><th>Hotel</th><th>Check-in</th><th>Check-out</th><th>Status</th><th>Total</th></tr>
+                        </thead>
+                        <tbody id="bookingsBody">
+                            {% for booking in bookings %}
+                            <tr onclick="location.href='{% url 'bookings:booking_detail' pk=booking.pk %}'" style="cursor:pointer;">
+                                <td class="fw-semibold">{{ booking.short_booking_id }}</td>
+                                <td>{{ booking.room.hotel.name }}</td>
+                                <td>{{ booking.check_in }}</td>
+                                <td>{{ booking.check_out }}</td>
+                                <td>
+                                    <span class="badge {% if booking.status == 'confirmed' %}bg-success{% elif booking.status == 'pending' %}bg-warning text-dark{% elif booking.status == 'cancelled' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                        {{ booking.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>₹{{ booking.total_price }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr id="emptyRow"><td colspan="6" class="text-center text-muted py-4">No bookings yet. <a href="{% url 'hotels:hotel_list' %}">Browse hotels!</a></td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-header fw-semibold">Quick Actions</div>
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'hotels:hotel_list' %}" class="list-group-item list-group-item-action"><i class="bi bi-search me-2 text-primary"></i>Browse Hotels</a>
+                    <a href="{% url 'hotels:hotel_map' %}" class="list-group-item list-group-item-action"><i class="bi bi-map me-2 text-primary"></i>Hotel Map</a>
+                    <a href="{% url 'bookings:booking_list' %}" class="list-group-item list-group-item-action"><i class="bi bi-calendar me-2 text-success"></i>All My Bookings</a>
+                    <a href="{% url 'payments:payment_history' %}" class="list-group-item list-group-item-action"><i class="bi bi-credit-card me-2 text-info"></i>Payment History</a>
+                    <a href="{% url 'users:profile' %}" class="list-group-item list-group-item-action"><i class="bi bi-person me-2 text-secondary"></i>My Profile</a>
+                    <a href="{% url 'users:profile_edit' %}" class="list-group-item list-group-item-action"><i class="bi bi-pencil me-2 text-secondary"></i>Edit Profile</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function setEl(id, val) {
+    const el = document.getElementById(id);
+    if (el && el.textContent !== String(val)) {
+        el.style.color = '#0d6efd';
+        el.textContent = val;
+        setTimeout(() => el.style.color = '', 600);
+    }
+}
+
+function statusBadgeClass(s) {
+    if (s === 'confirmed') return 'bg-success';
+    if (s === 'pending') return 'bg-warning text-dark';
+    if (s === 'cancelled') return 'bg-danger';
+    return 'bg-secondary';
+}
+
+function fetchCustomerStats() {
+    fetch('/api/realtime/customer-stats/')
+        .then(r => r.json())
+        .then(data => {
+            setEl('stat-total', data.total_bookings);
+            setEl('stat-active', data.active_bookings);
+            setEl('stat-pending', data.pending_bookings);
+            setEl('stat-cancelled', data.cancelled_bookings);
+            setEl('lastUpdate', data.timestamp);
+
+            const lastLabel = document.getElementById('lastUpdatedLabel');
+            if (lastLabel) lastLabel.textContent = 'Last updated: ' + data.timestamp;
+
+            // Refresh bookings table
+            if (data.recent_bookings.length > 0) {
+                document.getElementById('bookingsBody').innerHTML = data.recent_bookings.map(b =>
+                    `<tr onclick="location.href='/bookings/${b.id}/'" style="cursor:pointer;">
+                        <td class="fw-semibold">${b.booking_id}</td>
+                        <td>${b.hotel}</td>
+                        <td>${b.check_in}</td>
+                        <td>${b.check_out}</td>
+                        <td><span class="badge ${statusBadgeClass(b.status)}">${b.status}</span></td>
+                        <td>₹${b.total}</td>
+                    </tr>`
+                ).join('');
+            }
+        })
+        .catch(() => {});
+}
+
+fetchCustomerStats();
+setInterval(fetchCustomerStats, 20000);
+</script>
+{% endblock %}
