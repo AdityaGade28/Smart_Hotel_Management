@@ -69,6 +69,9 @@
             </div>
         </div>
     </div>
+
+    <!-- Route Info Banner -->
+    <div id="routeInfo" class="mt-2" style="display:none;"></div>
 </div>
 {% endblock %}
 
@@ -86,6 +89,7 @@ let infoWindow;
 let currentFilteredHotels = [];
 let userLocation = null;
 let userMarker = null;
+let osrmPolyline = null;
 
 function initMap() {
     const indiaCenter = { lat: 20.5937, lng: 78.9629 };
@@ -123,43 +127,92 @@ function fetchHotels() {
         });
 }
 
-function tryGeolocation() {
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                userLocation = {
-                    lat: position.coords.latitude,
-                    lng: position.coords.longitude,
-                };
-                
-                // Add User Marker
-                if (userMarker) userMarker.setMap(null);
-                userMarker = new google.maps.Marker({
-                    position: userLocation,
-                    map: map,
-                    title: "You are here",
-                    icon: {
-                        path: google.maps.SymbolPath.CIRCLE,
-                        scale: 10,
-                        fillColor: "#0d6efd",
-                        fillOpacity: 1,
-                        strokeWeight: 4,
-                        strokeColor: "white",
-                    }
-                });
-
-                map.setCenter(userLocation);
-                map.setZoom(12);
-                applyFilters();
-            },
-            () => {
-                applyFilters(); // Proceed without location
-            }
-        );
-    } else {
-        applyFilters();
+function showLocationStatus(msg, type = 'info') {
+    let toast = document.getElementById('locationToast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'locationToast';
+        toast.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:9999;min-width:320px;text-align:center;';
+        document.body.appendChild(toast);
     }
+    const colors = { info: '#0d6efd', success: '#198754', warning: '#ffc107', danger: '#dc3545' };
+    toast.innerHTML = `<div style="background:${colors[type]};color:${type==='warning'?'#000':'#fff'};padding:10px 18px;border-radius:30px;font-size:13px;box-shadow:0 4px 14px rgba(0,0,0,0.25);display:inline-block;">${msg}</div>`;
+    clearTimeout(toast._timeout);
+    toast._timeout = setTimeout(() => { toast.innerHTML = ''; }, 5000);
 }
+
+function placeUserMarker(lat, lng) {
+    userLocation = { lat, lng };
+    if (userMarker) userMarker.setMap(null);
+    userMarker = new google.maps.Marker({
+        position: userLocation,
+        map: map,
+        title: "You are here",
+        icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 10,
+            fillColor: "#0d6efd",
+            fillOpacity: 1,
+            strokeWeight: 4,
+            strokeColor: "white",
+        }
+    });
+    map.setCenter(userLocation);
+    map.setZoom(12);
+    applyFilters();
+}
+
+function fallbackToIpLocation() {
+    showLocationStatus('📡 Fetching approximate location via IP...', 'warning');
+    fetch('https://ip-api.com/json/?fields=status,lat,lon,city,regionName')
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === 'success') {
+                placeUserMarker(data.lat, data.lon);
+                showLocationStatus(`📍 Located via IP: ${data.city}, ${data.regionName}`, 'warning');
+            } else {
+                showLocationStatus('❌ Could not determine your location.', 'danger');
+                applyFilters();
+            }
+        })
+        .catch(() => {
+            showLocationStatus('❌ Location fetch failed. Check internet connection.', 'danger');
+            applyFilters();
+        });
+}
+
+function tryGeolocation() {
+    showLocationStatus('🔍 Requesting your location...', 'info');
+
+    if (!navigator.geolocation) {
+        showLocationStatus('⚠️ Browser GPS not supported. Trying IP location...', 'warning');
+        fallbackToIpLocation();
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+        (position) => {
+            placeUserMarker(position.coords.latitude, position.coords.longitude);
+            showLocationStatus('✅ Live location found!', 'success');
+        },
+        (error) => {
+            console.warn('Browser geolocation error:', error.code, error.message);
+            // Error codes: 1=PERMISSION_DENIED, 2=POSITION_UNAVAILABLE, 3=TIMEOUT
+            if (error.code === 1) {
+                showLocationStatus('🔒 Location permission denied. Falling back to IP location...', 'warning');
+            } else {
+                showLocationStatus('⚠️ GPS unavailable. Falling back to IP location...', 'warning');
+            }
+            fallbackToIpLocation();
+        },
+        {
+            enableHighAccuracy: true,
+            timeout: 8000,
+            maximumAge: 0
+        }
+    );
+}
+
 
 let googlePlacesMarkers = [];
 function discoverNearby() {
@@ -265,7 +318,10 @@ function renderAll() {
                 </div>
                 <div class="d-flex justify-content-between align-items-center">
                     <span class="fw-bold small text-primary">${h.min_price ? '₹'+h.min_price : 'N/A'}</span>
-                    <a href="${h.book_url}" class="btn btn-primary btn-sm py-0" style="font-size:11px;">Book Stay</a>
+                    <div class="d-flex gap-1">
+                        <button onclick="event.stopPropagation(); getDirections(${h.latitude}, ${h.longitude});" class="btn btn-outline-warning btn-sm py-0" style="font-size:11px; padding: 2px 6px;" title="Get Directions"><i class="bi bi-signpost-split"></i></button>
+                        <a href="${h.book_url}" class="btn btn-primary btn-sm py-0" style="font-size:11px;" onclick="event.stopPropagation();">Book Stay</a>
+                    </div>
                 </div>
             </div>
         `;
@@ -289,15 +345,94 @@ function showInfo(h, marker) {
                     <span>★ ${h.rating}</span>
                     <span class="fw-bold text-success">₹${h.min_price}/night</span>
                 </div>
-                <div class="d-flex gap-1">
+                <div class="d-flex gap-1 mb-1">
                     <a href="${h.detail_url}" class="btn btn-outline-primary btn-sm flex-grow-1" style="font-size:10px;padding:3px 5px;">View Details</a>
                     <a href="${h.book_url}" class="btn btn-primary btn-sm flex-grow-1" style="font-size:10px;padding:3px 5px;">Book Room</a>
                 </div>
+                <button onclick="getDirections(${h.latitude}, ${h.longitude})" class="btn btn-warning btn-sm w-100 fw-bold" style="font-size:10px;padding:3px 5px;">
+                    <i class="bi bi-signpost-split"></i> Get Directions
+                </button>
             </div>
         </div>
     `;
     infoWindow.setContent(content);
     infoWindow.open(map, marker);
+}
+
+function getDirections(destLat, destLng) {
+    if (!userLocation) {
+        alert("Please allow location access first by clicking the \u25ba Find my location button (📍) or enabling location in your browser.");
+        return;
+    }
+
+    const oLng = userLocation.lng;
+    const oLat = userLocation.lat;
+    const dLng = parseFloat(destLng);
+    const dLat = parseFloat(destLat);
+
+    // Use free OSRM public API — no key needed
+    const url = `https://router.project-osrm.org/route/v1/driving/${oLng},${oLat};${dLng},${dLat}?overview=full&geometries=geojson`;
+
+    if (infoWindow) infoWindow.close();
+
+    fetch(url)
+        .then(res => res.json())
+        .then(data => {
+            if (!data.routes || data.routes.length === 0) {
+                alert('No route found between your location and the hotel.');
+                return;
+            }
+
+            // Clear any previous route
+            if (osrmPolyline) {
+                osrmPolyline.setMap(null);
+                osrmPolyline = null;
+            }
+
+            const coords = data.routes[0].geometry.coordinates;
+            const path = coords.map(c => ({ lat: c[1], lng: c[0] }));
+
+            // Draw route as a styled polyline on the Google Map
+            osrmPolyline = new google.maps.Polyline({
+                path: path,
+                geodesic: true,
+                strokeColor: '#0d6efd',
+                strokeOpacity: 0.9,
+                strokeWeight: 5
+            });
+            osrmPolyline.setMap(map);
+
+            // Fit map to show full route
+            const bounds = new google.maps.LatLngBounds();
+            path.forEach(p => bounds.extend(p));
+            map.fitBounds(bounds);
+
+            // Show distance & duration info
+            const distKm = (data.routes[0].distance / 1000).toFixed(1);
+            const durMin = Math.round(data.routes[0].duration / 60);
+
+            const infoDiv = document.getElementById('routeInfo');
+            infoDiv.innerHTML = `
+                <div class="alert alert-info alert-dismissible fade show py-2 px-3 mb-0 small" role="alert">
+                    <strong><i class="bi bi-signpost-split me-1"></i>Route Found</strong>
+                    &nbsp;·&nbsp; <strong>${distKm} km</strong> &nbsp;·&nbsp;
+                    <strong>${durMin} min</strong> driving
+                    &nbsp; <button class="btn btn-sm btn-outline-danger ms-2 py-0" onclick="clearRoute()">Clear</button>
+                    <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>`;
+            infoDiv.style.display = 'block';
+        })
+        .catch(() => {
+            alert('Failed to fetch route. Please check your internet connection.');
+        });
+}
+
+function clearRoute() {
+    if (osrmPolyline) {
+        osrmPolyline.setMap(null);
+        osrmPolyline = null;
+    }
+    document.getElementById('routeInfo').style.display = 'none';
 }
 
 function applyFilters() {
